@@ -1,0 +1,35 @@
+# Experiment configuration
+experiment_name: "gepa_tutor_refinery"
+seed: 42
+
+dataset:
+  # one of: synthetic | race | arc_easy | arc_challenge
+  name: "synthetic"
+  subset: "middle"   # only for race: middle|high
+  n_train: 30
+  n_dev: 10
+  n_test: 10
+
+model:
+  # provider: mock | openai | anthropic
+  provider: "mock"
+  # model_id used if provider != mock
+  model_id: "gpt-4o-mini"
+  temperature: 0.2
+  max_output_tokens: 256
+  request_timeout: 60
+
+evaluation:
+  strategy: "baseline"   # overridden by CLI --mode
+  self_refine_steps: 1
+  # metrics we log automatically: accuracy, tokens_out, latency_sec
+
+gepa:
+  num_reflection_examples: 20      # how many failed examples to include
+  num_edits: 3                     # how many edits to propose per round
+  max_rounds: 2
+  pareto_metric_x: "avg_tokens_out"
+  pareto_metric_y: "accuracy"
+
+logging:
+  runs_dir: "runs"
