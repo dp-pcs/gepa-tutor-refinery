@@ -1,0 +1,9 @@
+{
+  "mode": "self_refine",
+  "dev_accuracy": 0.0,
+  "dev_avg_tokens_out": 7,
+  "dev_avg_latency_sec": 1.1444091796875e-06,
+  "test_accuracy": 0.0,
+  "test_avg_tokens_out": 7,
+  "test_avg_latency_sec": 5.7220458984375e-07
+}

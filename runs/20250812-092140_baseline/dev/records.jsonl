@@ -1,0 +1,5 @@
+{"id": "s1_dev_0", "answer_gold": "B", "answer_pred": "A", "correct": 0, "latency_sec": 5.0067901611328125e-06, "usage": {"output_tokens": 7}, "raw_text": "Reasoning: (mock) I considered options.\nAnswer: A"}
+{"id": "s2_dev_1", "answer_gold": "A", "answer_pred": "A", "correct": 1, "latency_sec": 2.1457672119140625e-06, "usage": {"output_tokens": 7}, "raw_text": "Reasoning: (mock) I considered options.\nAnswer: A"}
+{"id": "s3_dev_2", "answer_gold": "C", "answer_pred": "C", "correct": 1, "latency_sec": 7.152557373046875e-07, "usage": {"output_tokens": 7}, "raw_text": "Reasoning: (mock) I considered options.\nAnswer: C"}
+{"id": "s4_dev_3", "answer_gold": "C", "answer_pred": "B", "correct": 0, "latency_sec": 0.0, "usage": {"output_tokens": 7}, "raw_text": "Reasoning: (mock) I considered options.\nAnswer: B"}
+{"id": "s5_dev_4", "answer_gold": "B", "answer_pred": "B", "correct": 1, "latency_sec": 0.0, "usage": {"output_tokens": 7}, "raw_text": "Reasoning: (mock) I considered options.\nAnswer: B"}
