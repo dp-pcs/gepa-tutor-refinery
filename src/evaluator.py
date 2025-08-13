@@ -67,6 +67,7 @@ def run_eval(provider: Provider, base_prompt: str, examples: List[Example], stra
         
 
         
+        # Initialize with generic prompt, will be overridden for hybrid mode
         prompt = render_mcq_prompt(base_prompt, ex_for_run)
         rendered = prompt
         
@@ -231,6 +232,13 @@ FORMATTING RULES (CRITICAL):
 - Do NOT put any other letters on that line.
 - Do NOT add text after the final answer line.
 
+FORMAT EXAMPLES:
+✅ CORRECT: "Answer: A"
+✅ CORRECT: "The answer is clearly A. Answer: A"
+❌ WRONG: "Answer: A and B"
+❌ WRONG: "I think the answer is A"
+❌ WRONG: "Answer: A because..."
+
 Question:
 {ex.question}
 
@@ -239,6 +247,8 @@ CHOICES:
 
 Allowed answer letters: {letters}
 End with exactly one line: Answer: <LETTER>"""
+                # Update rendered for logging
+                rendered = sr_prompt
                 
                 gepa_review_prompt = f"""You are a **fact-checking auditor** reviewing an answer for accuracy.
 
@@ -251,6 +261,13 @@ Task:
 FORMATTING RULES:
 - Final line MUST be exactly: Answer: <LETTER>
 - Keep explanation concise and factual.
+- Be confident and decisive in your review.
+
+FORMAT EXAMPLES:
+✅ CORRECT: "Answer: A"
+✅ CORRECT: "The answer is correct. Answer: A"
+❌ WRONG: "Answer: A and B"
+❌ WRONG: "I think Answer: A"
 
 Here is the tutor's answer to review:
 {{SR_OUTPUT}}
@@ -266,6 +283,8 @@ Allowed answer letters: {letters}"""
             elif dataset_name == "lsat_lr":
                 # LSAT-LR: Focus on logical reasoning and flaw detection
                 sr_prompt = f"""You are a **logical reasoning tutor** specializing in argument analysis.
+                # Update rendered for logging
+                rendered = sr_prompt
 
 For each multiple-choice question:
 1) Restate the question briefly.
@@ -284,6 +303,13 @@ FORMATTING RULES (CRITICAL):
 - Do NOT put any other letters on that line.
 - Do NOT add text after the final answer line.
 
+FORMAT EXAMPLES:
+✅ CORRECT: "Answer: B"
+✅ CORRECT: "The logical flaw is clear. Answer: B"
+❌ WRONG: "Answer: B and C"
+❌ WRONG: "I believe the answer is B"
+❌ WRONG: "Answer: B because..."
+
 Question:
 {ex.question}
 
@@ -292,6 +318,8 @@ CHOICES:
 
 Allowed answer letters: {letters}
 End with exactly one line: Answer: <LETTER>"""
+                # Update rendered for logging
+                rendered = sr_prompt
                 
                 gepa_review_prompt = f"""You are a **logical reasoning auditor** reviewing an answer for soundness.
 
@@ -304,6 +332,13 @@ Task:
 FORMATTING RULES:
 - Final line MUST be exactly: Answer: <LETTER>
 - Keep explanation focused on logical soundness.
+- Be confident and decisive in your review.
+
+FORMAT EXAMPLES:
+✅ CORRECT: "Answer: B"
+✅ CORRECT: "The logic is sound. Answer: B"
+❌ WRONG: "Answer: B and C"
+❌ WRONG: "I believe Answer: B"
 
 Here is the tutor's answer to review:
 {{SR_OUTPUT}}
@@ -410,13 +445,54 @@ Allowed answer letters: {letters}"""
             sr_answer = parse_answer_letter(sr_result.text)
             gepa_answer = parse_answer_letter(gepa_result.text)
             
-            # Error recovery: Let GEPA override only if confident, else pass SR's answer through
+            # Enhanced error recovery with intelligent confidence scoring
+            def calculate_gepa_confidence(gepa_output, sr_output, sr_answer, gepa_answer):
+                """Calculate confidence score for GEPA override decision"""
+                confidence = 0.0
+                
+                # Base confidence from output quality
+                if len(gepa_output.strip()) <= 50:  # Very concise
+                    confidence += 0.2
+                elif len(gepa_output.strip()) <= 100:  # Moderately concise
+                    confidence += 0.15
+                
+                # Check if GEPA made a clear correction with reasoning
+                if "correct" in gepa_output.lower() or "wrong" in gepa_output.lower():
+                    confidence += 0.25
+                
+                # Check if GEPA provided logical reasoning
+                if any(word in gepa_output.lower() for word in ["because", "since", "as", "due to", "reason", "logic"]):
+                    confidence += 0.2
+                
+                # Check if GEPA is very confident (strong language)
+                if any(word in gepa_output.lower() for word in ["clearly", "obviously", "definitely", "certainly", "must", "should"]):
+                    confidence += 0.15
+                
+                # Check if GEPA identified a specific flaw in SR's reasoning
+                if any(word in gepa_output.lower() for word in ["flaw", "error", "mistake", "incorrect", "wrong"]):
+                    confidence += 0.25
+                
+                # Bonus for very specific corrections
+                if "the answer is" in gepa_output.lower() and gepa_answer != sr_answer:
+                    confidence += 0.1
+                
+                return min(confidence, 1.0)
+            
+            # Calculate confidence for GEPA override
+            gepa_confidence = calculate_gepa_confidence(gepa_result.text, sr_result.text, sr_answer, gepa_answer)
+            
             if gepa_answer is not None and gepa_answer != sr_answer:
-                # GEPA made a change - use it if it's a valid choice
+                # GEPA made a change - use it if it's valid AND confident enough
                 if any(gepa_answer == c['label'] for c in ex_for_run.choices):
-                    result = gepa_result
-                    answer = gepa_answer
-                    print(f"GEPA override: {sr_answer} → {gepa_answer} for {ex.id}")
+                    if gepa_confidence >= 0.35:  # Lower threshold for more aggressive overrides
+                        result = gepa_result
+                        answer = gepa_answer
+                        print(f"GEPA override (conf: {gepa_confidence:.2f}): {sr_answer} → {gepa_answer} for {ex.id}")
+                    else:
+                        # Low confidence - stick with SR
+                        result = sr_result
+                        answer = sr_answer
+                        print(f"GEPA low confidence ({gepa_confidence:.2f}), using SR: {sr_answer} for {ex.id}")
                 else:
                     # GEPA's answer is invalid, fall back to SR
                     result = sr_result
@@ -428,6 +504,8 @@ Allowed answer letters: {letters}"""
                 answer = sr_answer
                 if gepa_answer is None:
                     print(f"GEPA couldn't parse answer, using SR: {sr_answer} for {ex.id}")
+                else:
+                    print(f"GEPA no change, using SR: {sr_answer} for {ex.id}")
             
             # Calculate total tokens for both stages
             total_input_tokens = sr_tokens + gepa_tokens
@@ -513,7 +591,7 @@ Allowed answer letters: {letters}"""
             "latency_sec": latency_sec,
             "usage": usage_data,
             "raw_text": result.text,
-            "prompt_rendered": rendered
+            "prompt_rendered": sr_prompt if strategy == "hybrid" else rendered
         })
         
         latency_list.append(latency_sec)

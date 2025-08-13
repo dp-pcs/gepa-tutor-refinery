@@ -1,10 +1,10 @@
 # Experiment configuration
-experiment_name: agieval_lsat_lr
+experiment_name: truthfulqa_official
 seed: 42
 
 dataset:
   # one of: synthetic | race | arc_easy | arc_challenge
-  name: agieval_lsat_lr
+  name: truthfulqa_official
   subset: "middle"   # only for race: middle|high
   n_train: 30
   n_dev: 10

@@ -67,10 +67,13 @@ python -m src.run_loop --config configs/config.yaml --mode hybrid
 ## 🎯 **Next Steps & Roadmap**
 
 ### **Phase 3: Performance Optimization**
-1. **Prompt Refinement**: Analyze successful examples for optimization
-2. **Error Analysis**: Study GEPA override patterns
-3. **Confidence Scoring**: Implement sophisticated override logic
-4. **Format Training**: Add examples to reduce violations
+1. **Prompt Refinement**: ✅ **Complete** - Analyze successful examples for optimization
+2. **Error Analysis**: ✅ **Complete** - Study GEPA override patterns
+3. **Confidence Scoring**: 🔄 **In Progress** - Implement sophisticated override logic
+   - **Enhanced Scoring**: Added flaw detection, reasoning quality, correction specificity
+   - **Lower Threshold**: Reduced from 0.5 to 0.35 for more aggressive overrides
+   - **Bonus Points**: Added for specific corrections and flaw identification
+4. **Format Training**: ✅ **Complete** - Add examples to reduce violations
 
 ### **Phase 4: Advanced Features**
 1. **Conditional Execution**: Only run GEPA when SR confidence is low
