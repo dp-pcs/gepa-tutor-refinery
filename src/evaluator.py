@@ -446,37 +446,50 @@ Allowed answer letters: {letters}"""
             sr_answer = parse_answer_letter(sr_result.text)
             gepa_answer = parse_answer_letter(gepa_result.text)
             
-            # Enhanced error recovery with intelligent confidence scoring
+                        # Enhanced error recovery with intelligent confidence scoring
             def calculate_gepa_confidence(gepa_output, sr_output, sr_answer, gepa_answer):
                 """Calculate confidence score for GEPA override decision"""
                 confidence = 0.0
-                
+
                 # Base confidence from output quality
                 if len(gepa_output.strip()) <= 50:  # Very concise
                     confidence += 0.2
                 elif len(gepa_output.strip()) <= 100:  # Moderately concise
                     confidence += 0.15
-                
+
                 # Check if GEPA made a clear correction with reasoning
                 if "correct" in gepa_output.lower() or "wrong" in gepa_output.lower():
                     confidence += 0.25
-                
+
                 # Check if GEPA provided logical reasoning
                 if any(word in gepa_output.lower() for word in ["because", "since", "as", "due to", "reason", "logic"]):
                     confidence += 0.2
-                
+
                 # Check if GEPA is very confident (strong language)
                 if any(word in gepa_output.lower() for word in ["clearly", "obviously", "definitely", "certainly", "must", "should"]):
                     confidence += 0.15
-                
+
                 # Check if GEPA identified a specific flaw in SR's reasoning
                 if any(word in gepa_output.lower() for word in ["flaw", "error", "mistake", "incorrect", "wrong"]):
                     confidence += 0.25
-                
+
                 # Bonus for very specific corrections
                 if "the answer is" in gepa_output.lower() and gepa_answer != sr_answer:
                     confidence += 0.1
+
+                # PHASE 3.4: Additional confidence factors based on analysis
+                # Check for strong disagreement language
+                if any(word in gepa_output.lower() for word in ["incorrect", "wrong", "mistake", "error"]):
+                    confidence += 0.15
                 
+                # Check for specific answer correction
+                if gepa_answer and sr_answer and gepa_answer != sr_answer:
+                    confidence += 0.1
+                
+                # Check for clear reasoning structure
+                if any(word in gepa_output.lower() for word in ["therefore", "thus", "hence", "consequently"]):
+                    confidence += 0.1
+
                 return min(confidence, 1.0)
             
             # Calculate confidence for GEPA override
@@ -485,7 +498,7 @@ Allowed answer letters: {letters}"""
             if gepa_answer is not None and gepa_answer != sr_answer:
                 # GEPA made a change - use it if it's valid AND confident enough
                 if any(gepa_answer == c['label'] for c in ex_for_run.choices):
-                    if gepa_confidence >= 0.35:  # Lower threshold for more aggressive overrides
+                    if gepa_confidence >= 0.5:  # PHASE 3.4: Optimized threshold for better override success
                         result = gepa_result
                         answer = gepa_answer
                         print(f"GEPA override (conf: {gepa_confidence:.2f}): {sr_answer} → {gepa_answer} for {ex.id}")
@@ -573,6 +586,7 @@ Allowed answer letters: {letters}"""
                 "total_input_tokens": total_input_tokens,
                 "total_output_tokens": total_output_tokens,
                 "total_tokens_all_calls": total_tokens_all_calls,
+                "gepa_confidence": gepa_confidence,  # PHASE 3.4: Log confidence for analysis
             }
             latency_sec = total_latency
         else:
