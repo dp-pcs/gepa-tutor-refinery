@@ -1,0 +1,72 @@
+# Threshold Experiment Configuration for 0.80 threshold
+experiment_name: threshold_080_experiment
+seed: 42
+
+dataset:
+  name: agieval_lsat_lr
+  n_train: 0
+  n_dev: 20
+  n_test: 20
+
+model:
+  provider: "openai"
+  model_id: "gpt-3.5-turbo"
+  temperature: 0.2
+  max_output_tokens: 256
+  request_timeout: 60
+
+thresholds:
+  current_threshold: 0.80
+  confidence_levels: [0.75, 0.80, 0.85]
+  dataset_specific:
+    agieval_lsat_lr: [0.75, 0.80, 0.85]
+
+conditional_gepa:
+  enabled: true
+  uncertainty_signals:
+    - "maybe"
+    - "uncertain"
+    - "not sure"
+    - "could be"
+    - "might be"
+    - "possibly"
+    - "I think"
+    - "I believe"
+    - "seems like"
+    - "appears to"
+  length_thresholds:
+    min_tokens: 30
+    max_tokens: 200
+  reasoning_indicators:
+    - "because"
+    - "since"
+    - "as"
+    - "due to"
+    - "reason"
+    - "logic"
+    - "therefore"
+    - "thus"
+    - "hence"
+
+explicit_invalidation:
+  required: true
+  keywords:
+    - "incorrect"
+    - "wrong"
+    - "not supported"
+    - "invalid"
+    - "false"
+    - "misleading"
+    - "unsupported"
+    - "factually wrong"
+    - "logically flawed"
+    - "error"
+    - "mistake"
+
+evaluation:
+  strategy: "hybrid"
+  self_refine_steps: 1
+
+logging:
+  runs_dir: "runs"
+  detailed_logging: true

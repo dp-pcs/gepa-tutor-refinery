@@ -1,0 +1,92 @@
+# Threshold Experiment Configuration for Hybrid SR → GEPA
+# Testing different confidence thresholds and conditional execution strategies
+
+experiment_name: threshold_optimization
+seed: 42
+
+# Dataset configuration for threshold testing
+dataset:
+  name: agieval_lsat_lr  # Start with LSAT-LR as it's most challenging
+  n_train: 0
+  n_dev: 20  # Smaller dev set for quick iteration
+  n_test: 20
+
+model:
+  provider: "openai"
+  model_id: "gpt-3.5-turbo"
+  temperature: 0.2
+  max_output_tokens: 256
+  request_timeout: 60
+
+# Threshold experiment configuration
+thresholds:
+  # Test these confidence thresholds
+  confidence_levels: [0.75, 0.80, 0.85]
+  
+  # Dataset-specific thresholds (override confidence_levels if specified)
+  dataset_specific:
+    truthfulqa_official: [0.80, 0.85, 0.90]  # More aggressive for TruthfulQA
+    gpqa_diamond: [0.80, 0.85, 0.90]         # More aggressive for GPQA
+    agieval_lsat_lr: [0.85, 0.90, 0.95]      # Ultra-conservative for LSAT-LR
+    agieval_lsat_ar: [0.80, 0.85, 0.90]      # Conservative for LSAT-AR
+    agieval_sat_math: [0.80, 0.85, 0.90]     # Conservative for SAT-Math
+    mmlu_pro: [0.80, 0.85, 0.90]             # Conservative for MMLU-Pro
+    logiqa2: [0.80, 0.85, 0.90]              # Conservative for LogiQA
+
+# Conditional GEPA execution settings
+conditional_gepa:
+  enabled: true
+  
+  # Skip GEPA if SR output contains these uncertainty signals
+  uncertainty_signals:
+    - "maybe"
+    - "uncertain"
+    - "not sure"
+    - "could be"
+    - "might be"
+    - "possibly"
+    - "I think"
+    - "I believe"
+    - "seems like"
+    - "appears to"
+  
+  # Skip GEPA if SR output is unusually short/long
+  length_thresholds:
+    min_tokens: 30   # Skip if SR output is too short (likely incomplete)
+    max_tokens: 200  # Skip if SR output is too long (likely verbose)
+  
+  # Skip GEPA if SR output lacks reasoning structure
+  reasoning_indicators:
+    - "because"
+    - "since"
+    - "as"
+    - "due to"
+    - "reason"
+    - "logic"
+    - "therefore"
+    - "thus"
+    - "hence"
+
+# Explicit invalidation requirements (safety check)
+explicit_invalidation:
+  required: true
+  keywords:
+    - "incorrect"
+    - "wrong"
+    - "not supported"
+    - "invalid"
+    - "false"
+    - "misleading"
+    - "unsupported"
+    - "factually wrong"
+    - "logically flawed"
+    - "error"
+    - "mistake"
+
+evaluation:
+  strategy: "hybrid"
+  self_refine_steps: 1
+
+logging:
+  runs_dir: "runs"
+  detailed_logging: true  # Log all threshold decisions and overrides

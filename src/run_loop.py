@@ -279,8 +279,40 @@ IMPORTANT: Preserve the final-line format requirement. Output only the rules, on
         print("Wrote", out_dir)
 
     elif args.mode == "hybrid":
-        # Hybrid: SR → GEPA Review (2-stage chain)
-        print("Running hybrid mode: SR → GEPA Review...")
+        # Hybrid: SR → GEPA Review (2-stage chain) with Enhanced Threshold Management
+        print("Running hybrid mode: SR → GEPA Review with Enhanced Threshold Management...")
+        
+        # Load threshold configuration if available
+        threshold_config = {}
+        if 'thresholds' in cfg:
+            threshold_config = {
+                'confidence_threshold': cfg['thresholds'].get('current_threshold', 0.80),
+                'conditional_gepa_enabled': cfg.get('conditional_gepa', {}).get('enabled', True),
+                'explicit_invalidation_required': cfg.get('explicit_invalidation', {}).get('required', True),
+                'uncertainty_signals': cfg.get('conditional_gepa', {}).get('uncertainty_signals', [
+                    "maybe", "uncertain", "not sure", "could be", "might be", 
+                    "possibly", "i think", "i believe", "seems like", "appears to"
+                ]),
+                'min_tokens': cfg.get('conditional_gepa', {}).get('length_thresholds', {}).get('min_tokens', 30),
+                'max_tokens': cfg.get('conditional_gepa', {}).get('length_thresholds', {}).get('max_tokens', 200),
+                'reasoning_indicators': cfg.get('conditional_gepa', {}).get('reasoning_indicators', [
+                    "because", "since", "as", "due to", "reason", "logic", 
+                    "therefore", "thus", "hence"
+                ]),
+                'invalidation_keywords': cfg.get('explicit_invalidation', {}).get('keywords', [
+                    "incorrect", "wrong", "not supported", "invalid", "false", 
+                    "misleading", "unsupported", "factually wrong", "logically flawed",
+                    "error", "mistake"
+                ])
+            }
+            
+            print(f"🔧 Threshold Configuration:")
+            print(f"   Confidence Threshold: {threshold_config['confidence_threshold']:.2f}")
+            print(f"   Conditional GEPA: {'Enabled' if threshold_config['conditional_gepa_enabled'] else 'Disabled'}")
+            print(f"   Explicit Invalidation: {'Required' if threshold_config['explicit_invalidation_required'] else 'Optional'}")
+        
+        # Attach threshold config to provider for evaluator access
+        provider.threshold_config = threshold_config
         
         # Run hybrid evaluation on both dev and test
         res_dev = run_eval(provider, base_prompt, dev, strategy="hybrid", out_dir=str(out_dir / "dev"))

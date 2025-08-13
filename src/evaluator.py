@@ -495,18 +495,87 @@ Allowed answer letters: {letters}"""
             # Calculate confidence for GEPA override
             gepa_confidence = calculate_gepa_confidence(gepa_result.text, sr_result.text, sr_answer, gepa_answer)
             
-            if gepa_answer is not None and gepa_answer != sr_answer:
+            # PHASE 4: Enhanced Threshold Management with Conditional Execution
+            # Load threshold configuration if available
+            threshold_config = getattr(provider, 'threshold_config', {})
+            confidence_threshold = threshold_config.get('confidence_threshold', 0.80)  # Default fallback
+            conditional_gepa_enabled = threshold_config.get('conditional_gepa_enabled', True)
+            explicit_invalidation_required = threshold_config.get('explicit_invalidation_required', True)
+            
+            # Conditional GEPA execution: Skip if SR output shows uncertainty
+            should_skip_gepa = False
+            if conditional_gepa_enabled:
+                sr_text_lower = sr_result.text.lower()
+                
+                # Check for uncertainty signals
+                uncertainty_signals = threshold_config.get('uncertainty_signals', [
+                    "maybe", "uncertain", "not sure", "could be", "might be", 
+                    "possibly", "i think", "i believe", "seems like", "appears to"
+                ])
+                
+                if any(signal in sr_text_lower for signal in uncertainty_signals):
+                    should_skip_gepa = True
+                    print(f"GEPA SKIPPED (uncertainty signal): {ex.id}")
+                
+                # Check for unusual length
+                sr_tokens = len(sr_result.text.split())
+                min_tokens = threshold_config.get('min_tokens', 30)
+                max_tokens = threshold_config.get('max_tokens', 200)
+                
+                if sr_tokens < min_tokens or sr_tokens > max_tokens:
+                    should_skip_gepa = True
+                    print(f"GEPA SKIPPED (length {sr_tokens} tokens): {ex.id}")
+                
+                # Check for lack of reasoning structure
+                reasoning_indicators = threshold_config.get('reasoning_indicators', [
+                    "because", "since", "as", "due to", "reason", "logic", 
+                    "therefore", "thus", "hence"
+                ])
+                
+                if not any(indicator in sr_text_lower for indicator in reasoning_indicators):
+                    should_skip_gepa = True
+                    print(f"GEPA SKIPPED (no reasoning structure): {ex.id}")
+            
+            if should_skip_gepa:
+                # Skip GEPA execution - use SR's answer directly
+                result = sr_result
+                answer = sr_answer
+                gepa_confidence = 0.0  # Mark as skipped
+                print(f"GEPA execution skipped for {ex.id}, using SR: {sr_answer}")
+            elif gepa_answer is not None and gepa_answer != sr_answer:
                 # GEPA made a change - use it if it's valid AND confident enough
                 if any(gepa_answer == c['label'] for c in ex_for_run.choices):
-                    if gepa_confidence >= 0.5:  # PHASE 3.4: Optimized threshold for better override success
-                        result = gepa_result
-                        answer = gepa_answer
-                        print(f"GEPA override (conf: {gepa_confidence:.2f}): {sr_answer} → {gepa_answer} for {ex.id}")
+                    # Enhanced threshold management with dataset-specific overrides
+                    if gepa_confidence >= confidence_threshold:
+                        # Check explicit invalidation if required
+                        if explicit_invalidation_required:
+                            gepa_text_lower = gepa_result.text.lower()
+                            invalidation_keywords = threshold_config.get('invalidation_keywords', [
+                                "incorrect", "wrong", "not supported", "invalid", "false", 
+                                "misleading", "unsupported", "factually wrong", "logically flawed",
+                                "error", "mistake"
+                            ])
+                            explicit_invalidation = any(word in gepa_text_lower for word in invalidation_keywords)
+                            
+                            if explicit_invalidation:
+                                result = gepa_result
+                                answer = gepa_answer
+                                print(f"GEPA OVERRIDE (conf: {gepa_confidence:.2f}, threshold: {confidence_threshold:.2f}, explicit invalidation): {sr_answer} → {gepa_answer} for {ex.id}")
+                            else:
+                                # High confidence but no explicit invalidation - stick with SR
+                                result = sr_result
+                                answer = sr_answer
+                                print(f"GEPA high confidence ({gepa_confidence:.2f}) but no explicit invalidation, using SR: {sr_answer} for {ex.id}")
+                        else:
+                            # Explicit invalidation not required - use GEPA if confident enough
+                            result = gepa_result
+                            answer = gepa_answer
+                            print(f"GEPA OVERRIDE (conf: {gepa_confidence:.2f}, threshold: {confidence_threshold:.2f}): {sr_answer} → {gepa_answer} for {ex.id}")
                     else:
-                        # Low confidence - stick with SR
+                        # Below confidence threshold - stick with SR
                         result = sr_result
                         answer = sr_answer
-                        print(f"GEPA low confidence ({gepa_confidence:.2f}), using SR: {sr_answer} for {ex.id}")
+                        print(f"GEPA below threshold ({gepa_confidence:.2f} < {confidence_threshold:.2f}), using SR: {sr_answer} for {ex.id}")
                 else:
                     # GEPA's answer is invalid, fall back to SR
                     result = sr_result
