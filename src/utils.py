@@ -12,13 +12,10 @@ def write_jsonl(path: str | pathlib.Path, rows: List[Dict[str, Any]]):
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
 def parse_answer_letter(text: str) -> str | None:
-    # extract final 'Answer: X' or single capital letter A-D on a labeled line
-    m = re.search(r"Answer\s*:\s*([A-D])\b", text.strip(), flags=re.IGNORECASE)
-    if m: return m.group(1).upper()
-    # fallback: last capital letter A-D in text
-    m2 = re.findall(r"\b([A-D])\b", text)
-    if m2: return m2[-1].upper()
-    return None
+    # Strict: require explicit 'Answer: <LETTER>' with A-J support
+    # No fallback to "last capital letter." If the model doesn't follow the format, it gets scored wrong.
+    m = re.search(r"(?im)^\s*Answer\s*:\s*([A-J])\b", text)
+    return m.group(1).upper() if m else None
 
 def diff_text(a: str, b: str) -> str:
     return "".join(difflib.unified_diff(a.splitlines(True), b.splitlines(True), lineterm=""))

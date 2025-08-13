@@ -13,6 +13,8 @@ You will see FAILED EXAMPLES: each includes (context, question, choices, your_an
    - Include any verification/check steps
 3) For each edit, state which failure modes it addresses.
 
+IMPORTANT: Do not remove or change the formatting rules above. If you add steps, they must keep the final line requirement intact.
+
 Return **valid JSON** only in this schema:
 {{
   "rules": ["..."],
