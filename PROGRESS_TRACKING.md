@@ -65,9 +65,16 @@
   - **Phase 3**: Performance optimization and prompt refinement
     - **3.1**: ✅ **Complete** - Prompt rendering fixes and dataset-specific prompts
     - **3.2**: ✅ **Complete** - Format training examples and error recovery
-    - **3.3**: 🔄 **In Progress** - Intelligent confidence scoring and override logic
+    - **3.3**: ✅ **Complete** - Intelligent confidence scoring and override logic
     - **3.4**: 📋 **Planned** - Performance analysis and threshold optimization
   - **Phase 4**: Advanced features (conditional execution, hybrid variants) - **PLANNED**
+
+### **Critical Review Findings (Instructions/review_updates.md)**
+- **Task Mismatch**: Prompts assume passages exist when they don't (TruthfulQA-MC, LSAT)
+- **Format Violations**: GEPA edits breaking format cause 0% accuracy
+- **Token Explosion**: Little accuracy gain for high token cost
+- **Overfitting**: Dev set edits don't generalize to test set
+- **Hybrid Complexity**: Inherits mistakes and multiplies token cost
 
 ## Questions & Clarifications Needed
 

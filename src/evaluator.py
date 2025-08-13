@@ -283,8 +283,6 @@ Allowed answer letters: {letters}"""
             elif dataset_name == "lsat_lr":
                 # LSAT-LR: Focus on logical reasoning and flaw detection
                 sr_prompt = f"""You are a **logical reasoning tutor** specializing in argument analysis.
-                # Update rendered for logging
-                rendered = sr_prompt
 
 For each multiple-choice question:
 1) Restate the question briefly.
@@ -406,6 +404,9 @@ CHOICES:
 
 Allowed answer letters: {letters}
 End with exactly one line: Answer: <LETTER>"""
+                
+                # Update rendered for logging
+                rendered = sr_prompt
                 
                 # Generic GEPA review
                 gepa_review_prompt = f"""You are reviewing an answer from a tutor for a multiple-choice question.
