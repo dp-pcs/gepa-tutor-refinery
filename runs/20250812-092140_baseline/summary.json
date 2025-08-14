@@ -1,9 +1,0 @@
-{
-  "mode": "baseline",
-  "dev_accuracy": 0.6,
-  "dev_avg_tokens_out": 7,
-  "dev_avg_latency_sec": 1.5735626220703124e-06,
-  "test_accuracy": 0.4,
-  "test_avg_tokens_out": 7,
-  "test_avg_latency_sec": 6.198883056640625e-07
-}

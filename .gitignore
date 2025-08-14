@@ -110,3 +110,104 @@ data/
 *.jpg
 *.jpeg
 *.gif
+
+# Additional project-specific patterns
+# Experiment results and temporary files
+runs/
+experiments/
+results/
+outputs/
+
+# Data files (keep sample_data but ignore actual datasets)
+data/
+datasets/
+*.jsonl
+*.json
+*.csv
+*.tsv
+*.txt
+
+# Generated reports and analysis
+report/*.md
+report/*.html
+report/*.pdf
+analysis_results.txt
+record_analysis.txt
+
+# Configuration overrides
+configs/*_override.yaml
+configs/*_local.yaml
+configs/secrets.yaml
+
+# API keys and secrets
+secrets.yaml
+secrets.json
+*.key
+*.pem
+*.p12
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*~
+
+# Cache directories
+.cache/
+cache/
+__pycache__/
+.pytest_cache/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Documentation builds
+docs/_build/
+docs/build/
+site/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backup files
+*.orig
+*.rej
+*.bak
+*.backup
+*.old
+
+# Large files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.model
+*.bin
+*.h5
+*.pkl
+*.pickle
+
+# Sensitive information
+.env
+.env.*
+secrets/
+credentials/
+keys/
